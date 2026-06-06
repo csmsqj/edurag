@@ -1,0 +1,47 @@
+# ===================================================================
+# EduRAG 智慧问答系统 - 精简版依赖清单
+# 说明：只列项目直接依赖的包，子依赖由 pip 自动解析
+#       不锁死小版本号，避免跨环境安装时的包冲突
+# 安装：pip install -r requirments.txt -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+# ===================================================================
+
+# ==================== 一、基础配置模块 (base/) ====================
+python-dotenv           # .env 环境变量加载
+loguru                  # 日志库
+
+# ==================== 二、MySQL + Redis 模块 (mysql_all/) ====================
+PyMySQL                 # MySQL 连接
+redis                   # Redis 连接
+pandas                  # CSV / 数据处理
+
+# ==================== 三、BM25 检索模块 (mysql_all/retrieval/) ====================
+rank-bm25               # BM25 算法实现
+jieba                   # 中文分词
+
+# ==================== 四、LangChain 框架 ====================
+langchain               # LangChain 核心框架
+langchain-core          # 底层接口：Document, BaseLoader, PromptTemplate
+langchain-community     # 社区加载器：TextLoader, UnstructuredMarkdownLoader
+langchain-text-splitters # 文本切分器：RecursiveCharacterTextSplitter, MarkdownTextSplitter
+langchain-openai        # OpenAI 兼容接口（DeepSeek 也走这个）
+langchain-ollama        # Ollama 本地模型接口（可选）
+
+# ==================== 五、文档解析模块 (edu_document_loaders/) ====================
+PyMuPDF                 # PDF 解析（import fitz），注意：不是 pip install fitz
+python-pptx             # PPT 解析（import pptx）
+python-docx             # Word 解析（import docx）
+rapidocr-onnxruntime    # OCR 文字识别（不依赖 PaddlePaddle，轻量）
+Pillow                  # 图像处理
+opencv-python-headless  # 图像预处理（headless 版无 GUI 依赖，服务器友好）
+
+# ==================== 六、向量存储与检索模块 (vector_store.py) ====================
+pymilvus                # Milvus 向量数据库客户端
+milvus-model            # BGE-M3 嵌入模型封装（BGEM3EmbeddingFunction）
+sentence-transformers   # CrossEncoder 重排序模型
+transformers            # Hugging Face 模型底层（sentence-transformers 依赖）
+torch                   # PyTorch 深度学习框架（transformers 依赖）
+
+# ==================== 七、通用工具 ====================
+numpy                   # 数值计算
+tqdm                    # 进度条
+tiktoken                # Token 计数（LangChain 内部可能用到）
