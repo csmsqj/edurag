@@ -8,6 +8,8 @@ sys.path.insert(0,basedir)
 from log import get_logger
 
 logger = get_logger()
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 class Config:
     def __init__(self):
         try:
@@ -31,14 +33,22 @@ class Config:
             self.URL=self.config.get("llm","base_url")
 
             self.REDIS_PASSWORD=os.getenv("REDIS_PASSWORD","123456")
-            self.MYSQL_PASSWORD=os.getenv("MYSQL_PASSWORD","1python edu_document_loaders/edu_imgloader.py23456")
-            self.MIMO_APIKEY=os.getenv("DEEPSEEK_API_KEY","sk-8c6fedee3f4a4ad7ac7773635027c006")
+            self.MYSQL_PASSWORD=os.getenv("MYSQL_PASSWORD","123456")
+            self.DEEPSEEK_APIKEY=os.getenv("DEEPSEEK_API_KEY","")
 
             self.PARENT_CHUNK_SIZE=self.config.getint("retrieval","parent_chunk_size")
             self.CHILD_CHUNK_SIZE=self.config.getint("retrieval","child_chunk_size")
             self.CHUNK_OVERLAP=self.config.getint("retrieval","chunk_overlap")
             self.RETRIEVAL_K=self.config.getint("retrieval","retrieval_k")
             self.CONDIDATE_M=self.config.getint("retrieval","candidate_m")
+
+
+
+            self.COLLECTION_NAME = self.config.get("milvus","collection_name")
+            self.MILVUS_HOST = self.config.get("milvus","host")
+            self.MILVUS_PORT = self.config.getint("milvus","port")
+            self.MILVUS_DATABASE = self.config.get("milvus","database")
+
             logger.info("config：配置文件读取成功")
         except Exception as e:
 

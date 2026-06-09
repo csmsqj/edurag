@@ -21,9 +21,9 @@ from edu_document_loaders.edu_imgloader import CustomImageLoader
 # 注意：LangChain 0.2+ 版本已把 text_splitter 拆分到独立包 langchain-text-splitters
 #       旧写法 from langchain.text_splitter import ... 在新版中会报 ImportError
 from langchain_text_splitters import MarkdownTextSplitter
-from edu_text_splitter import (
-    edu_chinese_text_splitter
-)
+from edu_text_splitter.edu_chinese_text_splitter import ChineseRecursiveTextSplitter
+
+
 
 from datetime import datetime  # Python 内置模块，用于记录处理时间
 
@@ -78,19 +78,25 @@ class document_loader_splitter:
                 self.logger.warning(f"不支持的文件类型: {filename}，跳过处理")
         return documents
     # 对加载出来的 Document 对象进行切割，返回一个新的 Document 对象列表
-    def process_documents(self,directory_path, parent_chunk_size=512,child_chunk_size=128,chunk_overlap=40):
+    def process_documents(self,directory_path, parent_chunk_size=None,child_chunk_size=None,chunk_overlap=None):
+        if parent_chunk_size is None:
+            parent_chunk_size=self.config.PARENT_CHUNK_SIZE
+        if child_chunk_size is None:
+            child_chunk_size=self.config.CHILD_CHUNK_SIZE
+        if chunk_overlap is None:
+            chunk_overlap=self.config.CHUNK_OVERLAP
         #调用 load_documents_from_directory() 方法加载文档
-        documents=document_loader_splitter.load_documents_from_directory(directory_path)
+        documents=self.load_documents_from_directory(directory_path)
         self.logger.info(f"加载的文档数量：{len(documents)}")
         #创建切割器分为 MD 文档切割器和中文文档切割器，同时还分了父切割器和子切割器
         # parent_md_size
         md_splitter=MarkdownTextSplitter(chunk_size=parent_chunk_size,chunk_overlap=chunk_overlap)
         #parent_chinese_size
-        chinese_splitter=edu_chinese_text_splitter(chunk_size=parent_chunk_size,chunk_overlap=chunk_overlap)
+        chinese_splitter=ChineseRecursiveTextSplitter(chunk_size=parent_chunk_size,chunk_overlap=chunk_overlap)
         # child_md_size
         md_child_splitter=MarkdownTextSplitter(chunk_size=child_chunk_size,chunk_overlap=chunk_overlap)
         # child_chinese_size
-        chinese_child_splitter=edu_chinese_text_splitter(chunk_size=child_chunk_size,chunk_overlap=chunk_overlap)
+        chinese_child_splitter=ChineseRecursiveTextSplitter(chunk_size=child_chunk_size,chunk_overlap=chunk_overlap)
         all_chunks=[]  # 创建空列表，用来收集所有切割出来的 Document 对象
         #  i = 当前文档的编号（从 0 开始），doc = 当前文档的 Document 对象
         # 为什么能用两个变量接收？Python 支持"元组解包"——(i, doc) 自动拆成 i 和 doc
@@ -114,19 +120,28 @@ class document_loader_splitter:
                 # child_docs是一个 Document 对象列表，是一个父块切割出来的多个小块，包含 page_content 和 metadata（对每一个小块在进行切割）
                 for k, child_doc in enumerate(child_docs):
                     #这里遍历子框要加入对应的 ID 等元素，然后再把子框加入到列表当中去
-                    parent_id="doc{i}_parent{j}"  # 父块 ID，格式为 doc0_parent0、doc0_parent1、doc1_parent2 等
-                    child_id=f"{parent_id}_child{k}"  # 子块 ID，格式为
+                    parent_id=f"doc{i}_parent{j}"  # 父块 ID，格式为 doc0_parent0、doc0_parent1、doc1_parent2 等
+                    child_doc.metadata["parent_id"]=parent_id  # 把父块 ID 存到 metadata 字典里，键名为 "parent_id"
+                    child_doc.metadata["parent_content"]=parent_doc.page_content  # 把父块内容存到 metadata 字典里，键名为 "parent_content"
+                    all_chunks.append(child_doc)  # 把切割出来的子块 Document 对象添加到 all_chunks 列表中
 
 
 
-
-
-
-
-
+        self.logger.info(f"切割后的文档块数量：{len(all_chunks)}")
+        return all_chunks  # 返回切割后的所有块的 Document 对象列表
 
 if __name__ == '__main__':
     loader_splitter=document_loader_splitter()
     directory_path=os.path.join(dir,'data')
     #要求传的是具体对应的目录路径，例如：D:/myfiles/data 等等，不能传根目录或者不存在的目录，否则会报错
-    loader_splitter.load_documents_from_directory(directory_path)
+    loader_splitter.process_documents(directory_path)
+
+
+
+
+
+
+
+
+
+
