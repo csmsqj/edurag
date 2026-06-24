@@ -136,7 +136,7 @@ class VectorStore:
 
     #子块列表documents,添加到 Milvus 集合
     #:param documents: List[Document] - 要添加的文档列表
-    def add_documnets(self, documents):
+    def add_documents(self, documents):
         """
                 把 process_documents.py 输出的子块列表存进 Milvus。
                 流程：
@@ -260,6 +260,7 @@ class VectorStore:
         #返回要给大模型的文档列表。它是由父块内容、父块 ID ，对应资源，还有两个模型评分来组成的
         return final_documents
 
+#去重函数，用于从候选子块中获取唯一的父块文档，为search函数服务
     def _get_unique_parent_documents(self, candidates):
         """
         根据候选子块，取回唯一的父块文档。
@@ -297,8 +298,9 @@ if __name__     == '__main__':
     loader_splitter=document_loader_splitter()
     directory_path=os.path.join(rootfile,'data')
     documents=loader_splitter.process_documents(directory_path)
-    vector_store.add_documnets(documents)
-    query="Linus如何使用？"
+    #其他地方直接搜索就可以，这里先把文档添加到 Milvus 集合里
+    vector_store.add_documents(documents)
+    query=("java任课老师是谁？")
     results=vector_store.search(query)
     for i,res in enumerate(results):
         print(f"最终结果 {i+1}:{res.page_content}，来源：{res.metadata.get('source','')},重排序分数：{res.metadata.get('rerank_score',0)}")

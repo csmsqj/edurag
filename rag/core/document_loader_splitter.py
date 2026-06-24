@@ -78,6 +78,7 @@ class document_loader_splitter:
                 self.logger.warning(f"不支持的文件类型: {filename}，跳过处理")
         return documents
     # 对加载出来的 Document 对象进行切割，返回一个新的 Document 对象列表
+    #核心方法--对加载出来的 Document 对象进行切割，返回切割后的所有子块的 Document 对象列表
     def process_documents(self,directory_path, parent_chunk_size=None,child_chunk_size=None,chunk_overlap=None):
         if parent_chunk_size is None:
             parent_chunk_size=self.config.PARENT_CHUNK_SIZE
@@ -128,7 +129,7 @@ class document_loader_splitter:
 
 
         self.logger.info(f"切割后的文档块数量：{len(all_chunks)}")
-        return all_chunks  # 返回切割后的所有块的 Document 对象列表
+        return all_chunks  # 返回切割后的所有子块的 Document 对象列表
 
 if __name__ == '__main__':
     loader_splitter=document_loader_splitter()
