@@ -30,6 +30,7 @@ class Config:
             self.REDIS_PORT=self.config.getint("cache","port")
             self.REDIS_DB=self.config.getint("cache","db")
             self.MODEL=self.config.get("llm","model")
+            self.EBMEDDING_MODEL=self.config.get("llm","model_embedding")
             self.URL=self.config.get("llm","base_url")
 
             self.REDIS_PASSWORD=os.getenv("REDIS_PASSWORD","123456")

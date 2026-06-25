@@ -88,15 +88,11 @@ if __name__=="__main__":
     """
     # ① 创建参数解析器
     parser = argparse.ArgumentParser(description='EduRAG 智慧问答系统运行入口')
-    # ② 添加参数：--query_mode，指定是否进入问答模式（默认 True）
-    parser.add_argument('--query_mode', default=True, help='是否进入交互式查询模式（不带此参数则默认进入数据处理模式）')
+    # ② 添加参数：--query_mode，指定是否进入问答模式（默认 False）
+    parser.add_argument('--query_mode', action='store_true', default=False, help='是否进入交互式查询模式（不带此参数则默认进入数据处理模式）')
     # ③ 添加参数：--directory_path，指定文档目录路径（默认 "./data"）
     parser.add_argument('--directory_path', type=str, default=file, help='文档目录路径')
     # ③ 解析命令行参数
     args = parser.parse_args()
     # ④ 调用 main() 函数，传入解析后的参数
     main(query_mode=args.query_mode, directory_path=args.directory_path)
-
-
-
-

@@ -141,8 +141,14 @@ class RAGSystem:
         return ranked_sub_chunks
 
 # RAG 系统的核心方法：从用户提问到生成最终答案的完整流程
-    def generate_answer(self, query):
+    def generate_answer(self, query,history=None):
         """从用户提问到生成最终答案的完整流程"""
+        # ① 格式化对话历史为字符串
+        if history:
+            history_context = ["Q:{h['question']}\nA:{h['answer']}\n\n" for h in history]
+        else:
+            history_context = ""
+
         # ===== 第一步：记录开始时间 =====
         start_time = time.time()
         self.logger.info(f"开始处理查询: {query}")
@@ -155,20 +161,21 @@ class RAGSystem:
         if query_category == "通用知识":
             self.logger.info("查询为通用知识，直接调用 LLM")
             try:
-                result = self.rag_chain.invoke({
-                    "context": "",
+                for chunk in self.rag_chain.stream({
+                    "context": "",  # 通用知识不需要上下文
                     "question": query,
+                    "history": history_context,
                     "phone": 13339833311
-                })
-                answer = result
+                }):
+                    yield chunk  # 流式输出每个 chunk
                 # result 是 AIMessage 对象，result.content 是大模型返回的文本
             except Exception as e:
                 self.logger.error(f"直接调用 LLM 失败: {e}")
-                answer = f"抱歉，处理您的通用知识问题时出错。请联系人工客服：{13339833311}。"
+                yield f"抱歉，处理您的通用知识问题时出错。请联系人工客服：{13339833311}。"
 
             processing_time = time.time()- start_time
             self.logger.info(f"通用知识查询处理完成 (耗时: {processing_time:.2f}s, 查询: '{query}')")
-            return answer
+            return
 
         # 【分支 B】专业咨询 → 走 RAG 流程
         self.logger.info("查询为专业咨询, 执行 RAG 流程")
@@ -196,20 +203,19 @@ class RAGSystem:
 
         # ④ 最终使用 LCEL 链式调用生成答案
 
-        result = self.rag_chain.invoke({
-            "context": context,
+        for chunk in self.rag_chain.stream({
+            "context": context,  # 通用知识不需要上下文
             "question": query,
+            "history": history_context,
             "phone": 13339833311
-        })
+        }):
+            yield chunk  # 流式输出每个 chunk
         # invoke 内部执行流程：
         # 1. rag_prompt.invoke({"context": ..., "question": ..., "phone": ...})
         #    → 生成 [SystemMessage("你是一个智能助手..."), HumanMessage("上下文：...问题：...")]
         # 2. llm.invoke(上一步的消息列表)
         #    → 发送给 DeepSeek API，返回 AIMessage(content="AI大模型班学费25800元...")
-
-
-        return result
-
+        return
 
 
 if __name__=="__main__":
@@ -219,8 +225,9 @@ if __name__=="__main__":
                    )
 
     rag_system=RAGSystem(llm)
-    answer=rag_system.generate_answer("Java课程的授课老师是谁？")
-    print(answer)
+    for chunk in rag_system.generate_answer("Java课程的授课老师是谁？"):
+        print(chunk,end='',flush=True)
+
 
 
 

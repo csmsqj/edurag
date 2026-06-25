@@ -26,7 +26,6 @@ class BM25Search:
         self.original_questions=None
         self._load_data()
 
-
     # 加载数据
     #先从 Redis 获取 → Redis 没有就从 MySQL 加载 → MySQL 有数据则分词并缓存到 Redis → 初始化 BM25 模型。
     def _load_data(self):
@@ -35,7 +34,6 @@ class BM25Search:
         # 原始问题键：存储未分词的原始问题列表
         # 例如 Redis 中：qa_original_questions → ["什么是机器学习", "Python怎么安装", ...]
         original_key = "qa_original_questions"
-
         # 分词问题键：存储分词后的问题列表
         # 例如 Redis 中：qa_tokenized_questions → [["什么", "是", "机器", "学习"], ...]
         tokenized_key = "qa_tokenized_questions"
@@ -53,7 +51,7 @@ class BM25Search:
         # === 4. 如果 Redis 中没有数据，则从 MySQL 加载 ===
         # not self.original_questions：原始问题为 None 或空列表
         # not tokenized_questions：分词问题为 None 或空列表
-        # 只要有一个没数据，就需要从 MySQL 重新加载
+        # 只要有一个没数据，就需要从 MySQL 重新
         if not self.original_questions or not self.tokenized_questions:
             # --- 4.1 从 MySQL 获取所有数据 ---
             all_data = self.mysql_client.query_data()
@@ -107,12 +105,11 @@ class BM25Search:
             self.logger.error("无效查询")
             return None, False
         # 先查 Redis 缓存
-        answer=self.redis_client.get_data("answer:query")
+        answer=self.redis_client.get_data(f"answer:{query}")
         if answer is not None:
             self.logger.info("从 Redis 缓存获取答案")
             return answer, False
         try:
-
             #对问题进行分词
             tokenized_query = preprocess_text(query)
             #计算 BM25 分数,获得分数列表

@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 app
 .claude/
+CLAUDE.md
 models/
 rag/core/bert_results/

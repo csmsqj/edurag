@@ -1,0 +1,26 @@
+[
+  {
+    "question": "AI课程毕业后平均薪资是多少？",
+    "context": ["就业信息\nAI专业毕业后可从事：大模型开发工程师、NLP算法工程师、AI应用开发工程师、数据科学家等岗位\n毕业学员平均薪资：15K-25K（一线城市）\n提供就业推荐服务，与多家企业建立合作关系\n就业率：92%（2024年统计）"],
+    "answer": "AI课程毕业学员在一线城市的平均薪资为15K-25K，就业率达92%。",
+    "ground_truth": "15K-25K（一线城市）"
+  },
+  {
+    "question": "Java课程包含哪些微服务相关技术？",
+    "context": ["重点框架：Spring Boot、Spring MVC、MyBatis-Plus、Spring Cloud\n微服务架构：Spring Cloud Alibaba、Nacos、Gateway、Sentinel、Seata\n中间件：RabbitMQ/Kafka消息队列、Elasticsearch搜索引擎\n容器化：Docker、Kubernetes基础"],
+    "answer": "Java课程的微服务相关技术包括：Spring Cloud、Spring Cloud Alibaba、Nacos服务注册与发现、Gateway网关、Sentinel限流熔断、Seata分布式事务，以及Docker和Kubernetes容器化技术。",
+    "ground_truth": "Spring Cloud Alibaba、Nacos、Gateway、Sentinel、Seata"
+  },
+  {
+    "question": "Java课程的学费和学习周期？",
+    "context": ["课程名称：Java全栈开发就业班\n学费：17888元（原价23800元）\n学习周期：6个月（全日制脱产），约960课时\n上课时间：周一至周五 9:00-18:00\n授课方式：线下面授 + 线上直播同步"],
+    "answer": "Java全栈开发就业班学费17888元（原价23800元），学习周期6个月，全日制脱产，共约960课时。",
+    "ground_truth": "学费17888元（原价23800元），学习周期6个月（全日制脱产），约960课时"
+  },
+  {
+    "question": "报名有学历要求吗？",
+    "context": ["通用政策\n报名无学历硬性要求，但建议大专及以上学历。\n报名无年龄限制，18-45岁学员均可报名。\n不提供住宿，但可协助推荐周边合租信息。"],
+    "answer": "报名没有学历硬性要求，但建议大专及以上学历。年龄方面，18-45岁学员均可报名。",
+    "ground_truth": "无学历硬性要求，但建议大专及以上学历"
+  }
+]

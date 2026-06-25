@@ -1,0 +1,182 @@
+<!-- static/index.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduRAG 智能问答</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #1976d2;
+            color: white;
+            padding: 16px 24px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .message.user {
+            align-self: flex-end;
+            background: #1976d2;
+            color: white;
+        }
+        .message.assistant {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+        .input-area {
+            padding: 16px 24px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 12px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: #1976d2; }
+        button {
+            padding: 12px 24px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">EduRAG 智能问答系统</div>
+    <div class="chat-container" id="chatContainer"></div>
+    <div class="input-area">
+        <input type="text" id="queryInput" placeholder="输入你的问题..."
+               onkeypress="if(event.key==='Enter') sendMessage()">
+        <button id="sendBtn" onclick="sendMessage()">发送</button>
+    </div>
+
+    <script>
+        let sessionId = null;  // 首次由后端生成，后续复用
+
+        async function sendMessage() {
+            const input = document.getElementById('queryInput');
+            const query = input.value.trim();
+            if (!query) return;
+
+            // 禁用输入
+            input.value = '';
+            document.getElementById('sendBtn').disabled = true;
+
+            // 显示用户消息
+            appendMessage(query, 'user');
+
+            // 创建助手消息容器（后续流式填充）
+            const assistantDiv = appendMessage('', 'assistant');
+
+            try {
+                // 发起 POST 请求，获取 SSE 流
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: query,
+                        session_id: sessionId
+                    })
+                });
+
+                // 获取 ReadableStream 的 reader
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';  // 缓冲区，处理跨 chunk 的不完整行
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    // 解码二进制为字符串，追加到缓冲区
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // 按 \n\n 分割完整的 SSE 事件
+                    const events = buffer.split('\n\n');
+                    // 最后一个元素可能是不完整的，留在缓冲区
+                    buffer = events.pop();
+
+                    for (const event of events) {
+                        if (!event.trim()) continue;
+
+                        // 去掉 "data: " 前缀
+                        const line = event.replace(/^data: /, '');
+                        try {
+                            const data = JSON.parse(line);
+
+                            if (data.done) {
+                                // 流结束
+                                if (data.session_id) {
+                                    sessionId = data.session_id;
+                                }
+                            } else {
+                                // 追加 token 到助手消息
+                                assistantDiv.textContent += data.token;
+                            }
+                        } catch (e) {
+                            console.warn('JSON 解析失败:', line);
+                        }
+                    }
+
+                    // 自动滚动到底部
+                    const container = document.getElementById('chatContainer');
+                    container.scrollTop = container.scrollHeight;
+                }
+
+            } catch (error) {
+                assistantDiv.textContent = '请求失败: ' + error.message;
+            }
+
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('queryInput').focus();
+        }
+
+        function appendMessage(text, role) {
+            const container = document.getElementById('chatContainer');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return div;  // 返回 DOM 元素，供后续流式追加
+        }
+    </script>
+</body>
+</html>
