@@ -1,23 +1,33 @@
 #文本预处理
 # utils/preprocess.py
 import jieba
+import re
+
+# 匹配所有标点符号、空白字符、特殊符号
+_PUNCTUATION_RE = re.compile(r'[^\w]|[\d_]', re.UNICODE)
+# 停用词（高频无意义词）
+_STOPWORDS = frozenset([
+    '的', '了', '是', '在', '我', '有', '和', '就', '不', '人', '都', '一',
+    '一个', '上', '也', '很', '到', '说', '要', '去', '你', '会', '着',
+    '没有', '看', '好', '自己', '这', '他', '她', '它', '们', '那',
+    '什么', '怎么', '如何', '吗', '呢', '吧', '啊', '哦', '嗯',
+    '可以', '能', '把', '被', '从', '对', '与', '为', '之',
+    '还', '又', '但', '而', '或', '及', '等', '中', '个',
+])
+
 def preprocess_text(text):
     """
-    对输入文本进行预处理：中文分词 + 小写规范化
-
-    参数：
-        text (str): 需要分词的原始中文文本，例如 "什么是机器学习"
-
-    返回：
-        list[str]: 分词后的词语列表，例如 ["什么", "是", "机器", "学习"]
-
-    为什么用 jieba.lcut 而不是 jieba.cut：
-        - jieba.cut() 返回的是生成器（generator），需要 list() 转换才能得到列表
-        - jieba.lcut() 直接返回列表（list），使用更方便
-        - 在数据量不大的场景下，两者性能差异可忽略
-
-    为什么要转小写 lower()：
-        - 统一英文大小写，避免 "Python" 和 "python" 被当作不同词
-        - 对中文没有影响（中文没有大小写概念），但对混合了英文的问题有用
+    对输入文本进行预处理：中文分词 + 小写 + 去标点 + 去停用词
     """
-    return [word.lower() for word in jieba.lcut(text)]
+    words = jieba.lcut(text)
+    result = []
+    for word in words:
+        w = word.lower().strip()
+        if not w:
+            continue
+        if _PUNCTUATION_RE.fullmatch(w):
+            continue
+        if w in _STOPWORDS:
+            continue
+        result.append(w)
+    return result

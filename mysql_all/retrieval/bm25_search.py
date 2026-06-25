@@ -99,7 +99,7 @@ class BM25Search:
         exp_scores = np.exp(scores - np.max(scores))
         return exp_scores / exp_scores.sum()
 
-    def search(self, query, threshold=0.6):
+    def search(self, query, threshold=0.6, raw_score_min=3.0):
         # 输入验证
         if not query or not isinstance(query, str):
             self.logger.error("无效查询")
@@ -114,26 +114,35 @@ class BM25Search:
             tokenized_query = preprocess_text(query)
             #计算 BM25 分数,获得分数列表
             score_list=self.bm25.get_scores(tokenized_query)
-            #对分数列表进行归一化处理，得到概率分布
-            scoreone_list=self._softmax(score_list)
             #找到分数最高的索引位置
-            #由于是列表形式，所以使用 np.argmax 来找到最大值的索引
-            best_index=np.argmax(scoreone_list)
+            best_index=np.argmax(score_list)
+            best_raw_score = score_list[best_index]
             #根据索引位置获取对应的原始问题
             original_question=self.original_questions[best_index]
 
-            #如果分数最高的那个问题的分数超过了设定的阈值，就返回对应的答案，否则返回 None 和需要人工干预的标志
-            if scoreone_list[best_index]>threshold:
+            self.logger.info(f"BM25 最佳匹配: '{original_question}', 原始分数: {best_raw_score:.4f}")
+
+            # 第一关：原始分数必须超过绝对阈值，防止无关问题被 softmax 抬高
+            if best_raw_score < raw_score_min:
+                self.logger.info(f"原始分数 {best_raw_score:.4f} < {raw_score_min}，无有效匹配，转 RAG")
+                return None, True
+
+            # 第二关：softmax 归一化后检查相对置信度
+            scoreone_list=self._softmax(score_list)
+            best_softmax = scoreone_list[best_index]
+            self.logger.info(f"Softmax 置信度: {best_softmax:.4f}, 阈值: {threshold}")
+
+            if best_softmax > threshold:
                 # 根据原始问题，在数据库当中查询对应的答案
                 results = self.mysql_client.query_qustion(original_question)
-                answer=results[0][2]  # query_qustion 返回的是 (subject_name, question, answer) 元组列表，索引 [0][2] 是第一个结果的答案
+                answer=results[0][2]
 
-                # 将答案缓存到 Redis 中，设置一个过期时间（例如 1 小时）
+                # 将答案缓存到 Redis 中
                 self.redis_client.set_data(f"answer:{query}", answer)
                 self.logger.info("搜索成功，返回答案")
                 return answer, False
             else:
-                self.logger.info("搜索结果分数过低，返回需要人工干预的标志")
+                self.logger.info("Softmax 置信度过低，转 RAG")
                 return None, True
         except Exception as e:
             self.logger.error(f"搜索失败：{e}")

@@ -141,14 +141,13 @@
                         try {
                             const data = JSON.parse(line);
 
+                            if (data.token) {
+                                assistantDiv.textContent += data.token;
+                            }
                             if (data.done) {
-                                // 流结束
                                 if (data.session_id) {
                                     sessionId = data.session_id;
                                 }
-                            } else {
-                                // 追加 token 到助手消息
-                                assistantDiv.textContent += data.token;
                             }
                         } catch (e) {
                             console.warn('JSON 解析失败:', line);
